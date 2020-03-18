@@ -3,6 +3,7 @@ package imgridwindow
 import (
 	"gocv.io/x/gocv"
 	"image"
+	"log"
 	"math"
 )
 
@@ -45,6 +46,17 @@ func (w *Window) WaitKey(d int) {
 	w.w.WaitKey(d)
 }
 
+func determineColorConversionCode(mat gocv.Mat) gocv.ColorConversionCode {
+	log.Println("determineColorConversionCode", mat.Channels(), mat.Size(), mat.Type(), int(mat.Type()))
+	switch mat.Type() {
+	case gocv.MatTypeCV8UC3:
+	case gocv.MatTypeCV8UC4:
+	case gocv.MatTypeCV8U:
+	}
+
+	return 1
+}
+
 func (w *Window) AddImage(img gocv.Mat) {
 	mat := gocv.NewMatWithSize(w.height, w.width, matType)
 
@@ -55,8 +67,25 @@ func (w *Window) AddImage(img gocv.Mat) {
 	defer img.Close()
 
 	gocv.Resize(img, &img, dstRect.Size(), 0, 0, gocv.InterpolationLanczos4)
-	img.ConvertTo(&img, matType)
+	//img.ConvertTo(&img, matType)
+	// FIXME Remove hack
+	ccc := determineColorConversionCode(img)
+	if ccc != 0 {
+		i, err := img.ToImage()
+		if err != nil {
+			panic(err)
+		}
+		m, err := gocv.ImageToMatRGB(i)
+		if err != nil {
+			panic(err)
+		}
+		img.Close()
+		img = m
+		defer img.Close()
+		//gocv.CvtColor(img, &img, ccc)
+	}
 	img.CopyTo(&dst)
+
 
 	w.imgs = append(w.imgs, mat)
 	w.render()
@@ -87,11 +116,13 @@ func (w *Window) calcDstRect(img gocv.Mat) image.Rectangle {
 		rt.Min.Y = 0
 		rt.Max.Y = w.height
 
-		iw := int(float64(w.width) / asp2)
+		iw := int(float64(w.width) * asp2)
 
 		rt.Min.X = (w.width - iw) / 2
 		rt.Max.X = rt.Min.X + iw
 	}
+
+	log.Println("RECT", rt, iw, ih, iAsp, wAsp, asp2)
 
 	return rt
 }
@@ -136,4 +167,5 @@ func (w *Window) render() {
 	w.w.ResizeWindow(cWidth/2, cHeight/2)
 
 	w.w.IMShow(w.canvas)
+	w.w.WaitKey(1)
 }
