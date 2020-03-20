@@ -8,46 +8,35 @@ import (
 
 type Debouncer struct {
 	threshold time.Duration
-	cancels   map[string]func()
+	cancel    func()
 	lock      sync.Mutex
 }
 
 func New(threshold time.Duration) *Debouncer {
 	tt := &Debouncer{
 		threshold: threshold,
-		cancels:   make(map[string]func()),
 	}
 	return tt
 }
 
-func (tt *Debouncer) timer(id string, ctx context.Context, fn func()) {
+func (deb *Debouncer) timer(ctx context.Context, fn func()) {
 	select {
-	case <-time.After(tt.threshold):
-		(func() {
-			// FIXME What to do with panics in fn callback
-			//defer tools.Recover(func(rec interface{}, strace string) {
-			//	log.Println("PANIC Debouncer::timer", id, rec, strace)
-			//})
-
-			tt.lock.Lock()
-			defer tt.lock.Unlock()
-			delete(tt.cancels, id)
-
-			fn()
-		})()
 	case <-ctx.Done():
+	case <-time.After(deb.threshold):
+		fn()
 	}
 }
 
-func (tt *Debouncer) Trigger(id string, fn func()) {
-	tt.lock.Lock()
-	defer tt.lock.Unlock()
+func (deb *Debouncer) Trigger(fn func()) {
+	deb.lock.Lock()
+	defer deb.lock.Unlock()
 
-	if cancel, ok := tt.cancels[id]; ok {
-		cancel()
+	if deb.cancel != nil {
+		deb.cancel()
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	tt.cancels[id] = cancel
-	go tt.timer(id, ctx, fn)
+	deb.cancel = cancel
+
+	go deb.timer(ctx, fn)
 }
