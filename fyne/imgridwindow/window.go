@@ -4,17 +4,19 @@ import (
 	"fyne.io/fyne"
 	"fyne.io/fyne/canvas"
 	"fyne.io/fyne/layout"
-	"fyne.io/fyne/widget"
-	"github.com/themakers/gocv_utils/imgop"
 	"github.com/themakers/gocv_utils/imgrid"
-	"gocv.io/x/gocv"
-	"image"
-	"log"
-	"time"
 )
 
 type ImGridWindow struct {
 	fyne.Window
+
+	zone struct {
+		top    *fyne.Container
+		bottom *fyne.Container
+		left   *fyne.Container
+		right  *fyne.Container
+	}
+
 	grid *imgrid.ImGrid
 }
 
@@ -24,45 +26,35 @@ func New(app fyne.App, title string) *ImGridWindow {
 		grid:   imgrid.New(),
 	}
 
+
+
+	igw.zone.top = fyne.NewContainerWithLayout(layout.NewGridLayoutWithColumns(1))
+	igw.zone.bottom = fyne.NewContainerWithLayout(layout.NewGridLayoutWithColumns(1))
+	igw.zone.left = fyne.NewContainerWithLayout(layout.NewGridLayoutWithColumns(1))
+	igw.zone.right = fyne.NewContainerWithLayout(layout.NewGridLayoutWithColumns(1))
+
 	var (
-		top    = widget.NewLabel("TOP")
-		bottom = widget.NewLabel("BOTTOM")
-		left = widget.NewLabel("")
-		right = widget.NewLabel("")
 		center = canvas.NewRaster(igw.raster)
 	)
 
 	igw.SetContent(fyne.NewContainerWithLayout(layout.NewBorderLayout(
-		top, bottom, left, right,
-	), top, bottom, left, right, center))
+		igw.zone.top, igw.zone.bottom, igw.zone.left, igw.zone.right,
+	), igw.zone.top, igw.zone.bottom, igw.zone.left, igw.zone.right, center))
 
 	return igw
 }
 
-func (igw *ImGridWindow) raster(w, h int) image.Image {
-	var t0 = time.Now()
-	defer func() {
-		log.Println("raster calculation time2:", time.Now().Sub(t0))
-	}()
-	dst := imgop.NewMat(image.Point{X: w, Y: h})
-
-	//grid := igw.grid.GenerateGridWithCellSize(image.Point{X: w, Y: h})
-	grid := igw.grid.GenerateGridWithCellSize(image.Point{X: 400, Y: 300})
-
-	imgop.BlitFit(dst, imgop.MatRect(dst), grid)
-
-	img, err := dst.ToImage()
-	if err != nil {
-		panic(err)
+func (igw *ImGridWindow) addWidget(w fyne.CanvasObject, pos Position) {
+	var box *fyne.Container
+	switch pos {
+	case PositionTop:
+		box = igw.zone.top
+	case PositionBottom:
+		box = igw.zone.bottom
+	case PositionLeft:
+		box = igw.zone.left
+	case PositionRight:
+		box = igw.zone.right
 	}
-	return img
-}
-
-func (igw *ImGridWindow) AddImage(mat gocv.Mat) {
-	igw.grid.AddImage(mat)
-}
-
-
-func (igw *ImGridWindow) SetImage(i int, mat gocv.Mat) {
-	igw.grid.SetImage(i, mat)
+	box.AddObject(w)
 }
