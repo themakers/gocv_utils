@@ -5,10 +5,8 @@ import (
 	"github.com/themakers/gocv_utils/imgop"
 	"gocv.io/x/gocv"
 	"image"
-	"log"
+	"image/color"
 )
-
-const matType = gocv.MatTypeCV8UC3
 
 type ImGrid struct {
 	sz  image.Point
@@ -37,15 +35,6 @@ func (ig *ImGrid) Close() {
 }
 
 func (ig *ImGrid) setImage(i int, img gocv.Mat) {
-	img = img.Clone()
-	defer img.Close()
-
-	dst := gocv.NewMatWithSize(ig.sz.X, ig.sz.Y, matType)
-
-	dstRect := calc.CalcFitRect(imgop.MatSize(dst), imgop.MatSize(img))
-
-	gocv.Resize(img, &img, dstRect.Size(), 0, 0, gocv.InterpolationLanczos4)
-
 	// FIXME Hack; Should be gocv.CvtColor(img, &img, ???)
 	{
 		i, err := img.ToImage()
@@ -53,25 +42,15 @@ func (ig *ImGrid) setImage(i int, img gocv.Mat) {
 			panic(err)
 		}
 
-		m, err := gocv.ImageToMatRGB(i)
+		m, err := gocv.ImageToMatRGBA(i)
 		if err != nil {
 			panic(err)
 		}
 
-		img.Close()
 		img = m
-
-		defer img.Close()
 	}
 
-
-	log.Println("dstRect", imgop.MatSize(dst), imgop.MatSize(img), dstRect)
-	{
-		dstRegion := dst.Region(dstRect)
-		img.CopyTo(&dstRegion)
-	}
-
-	ig.grid[i] = dst
+	ig.grid[i] = img
 }
 
 func (ig *ImGrid) SetImage(i int, img gocv.Mat) {
@@ -89,10 +68,10 @@ func (ig *ImGrid) AddImage(img gocv.Mat) {
 }
 
 func (ig *ImGrid) GenerateGrid() gocv.Mat {
-
 	grid := calc.SimpleGridWithCellSize(len(ig.grid), ig.sz)
 
-	canvas := gocv.NewMatWithSize(grid.GridSize.Y, grid.GridSize.X, matType)
+	canvas := imgop.NewMat(grid.GridSize)
+	imgop.Fill(canvas, color.RGBA{R: 0, G: 0, B: 0, A: 0})
 
 	grid.ForEach(func(col, row, cell int, cellRect image.Rectangle) {
 
@@ -100,9 +79,7 @@ func (ig *ImGrid) GenerateGrid() gocv.Mat {
 			return
 		}
 
-		dst := canvas.Region(cellRect)
-
-		ig.grid[cell].CopyTo(&dst)
+		imgop.BlitFit(canvas, cellRect, ig.grid[cell])
 
 	})
 

@@ -51,6 +51,11 @@ func SimpleGridWithCellSize(numCells int, cellSize image.Point) FixedGrid {
 	}
 }
 
-func GridWithSize(numCells int, gridSize image.Point) (numRows, numCols int, cellSize image.Point) {
-	return
+func GridWithSize(numCells int, cellAspect float64, gridSize image.Point) FixedGrid {
+	//var (
+	//	numRows int
+	//	numCols int
+	//	cellSize image.Point
+	//)
+	return FixedGrid{}
 }

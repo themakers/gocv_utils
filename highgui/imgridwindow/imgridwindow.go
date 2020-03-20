@@ -1,8 +1,8 @@
 package imgridwindow
 
 import (
-	"github.com/themakers/gocv_utils/imgrid"
-	"gocv.io/x/gocv"
+"github.com/themakers/gocv_utils/imgrid"
+"gocv.io/x/gocv"
 )
 
 type Window struct {
