@@ -5,21 +5,14 @@ import (
 	"github.com/themakers/gocv_utils/imgop"
 	"gocv.io/x/gocv"
 	"image"
-	"image/color"
 )
 
 type ImGrid struct {
-	sz  image.Point
-	asp float64
-
 	grid []gocv.Mat
 }
 
-func New(sx, sy int) *ImGrid {
-	img := &ImGrid{
-		sz:  image.Point{X: sx, Y: sy},
-		asp: float64(sx) / float64(sy),
-	}
+func New() *ImGrid {
+	img := &ImGrid{}
 
 	return img
 }
@@ -36,21 +29,10 @@ func (ig *ImGrid) Close() {
 
 func (ig *ImGrid) setImage(i int, img gocv.Mat) {
 	// FIXME Hack; Should be gocv.CvtColor(img, &img, ???)
-	{
-		i, err := img.ToImage()
-		if err != nil {
-			panic(err)
-		}
-
-		m, err := gocv.ImageToMatRGBA(i)
-		if err != nil {
-			panic(err)
-		}
-
-		img = m
+	if ig.grid[i].Ptr() != nil {
+		ig.grid[i].Close()
 	}
-
-	ig.grid[i] = img
+	ig.grid[i] = imgop.ToRGBA(img)
 }
 
 func (ig *ImGrid) SetImage(i int, img gocv.Mat) {
@@ -67,11 +49,31 @@ func (ig *ImGrid) AddImage(img gocv.Mat) {
 	ig.SetImage(len(ig.grid), img)
 }
 
-func (ig *ImGrid) GenerateGrid() gocv.Mat {
-	grid := calc.SimpleGridWithCellSize(len(ig.grid), ig.sz)
+//func (ig *ImGrid) GenerateGridWithSize(gridSize image.Point) gocv.Mat {
+//	grid := calc.GridWithSize(len(ig.grid), 1.0, gridSize)
+//
+//	canvas := imgop.NewMat(grid.GridSize)
+//
+//	grid.ForEach(func(col, row, cell int, cellRect image.Rectangle) {
+//
+//		if ig.grid[cell].Ptr() == nil {
+//			return
+//		}
+//
+//		imgop.BlitFit(canvas, cellRect, ig.grid[cell])
+//
+//	})
+//
+//	return canvas
+//}
+
+
+func (ig *ImGrid) GenerateGridWithCellSize(cellSize image.Point) gocv.Mat {
+	grid := calc.SimpleGridWithCellSize(len(ig.grid), cellSize)
 
 	canvas := imgop.NewMat(grid.GridSize)
-	imgop.Fill(canvas, color.RGBA{R: 0, G: 0, B: 0, A: 0})
+	// FIXME ???
+	// imgop.Fill(canvas, color.RGBA{R: 0, G: 0, B: 0, A: 255})
 
 	grid.ForEach(func(col, row, cell int, cellRect image.Rectangle) {
 

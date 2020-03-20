@@ -1,20 +1,25 @@
 package imgridwindow
 
 import (
-"github.com/themakers/gocv_utils/imgrid"
-"gocv.io/x/gocv"
+	"github.com/themakers/gocv_utils/imgrid"
+	"gocv.io/x/gocv"
+	"image"
 )
 
 type Window struct {
 	w *gocv.Window
 
 	grid *imgrid.ImGrid
+
+	width, height int
 }
 
 func New(name string, width, height int) *Window {
 	w := &Window{
-		w:    gocv.NewWindow(name),
-		grid: imgrid.New(width, height),
+		w:      gocv.NewWindow(name),
+		grid:   imgrid.New(),
+		width:  width,
+		height: height,
 	}
 
 	w.w.SetWindowTitle(name)
@@ -22,9 +27,12 @@ func New(name string, width, height int) *Window {
 	return w
 }
 
-func (w *Window) Close() error {
+func (w *Window) Close() {
 	w.grid.Close()
-	return w.w.Close()
+
+	if err := w.w.Close(); err != nil {
+		panic(err)
+	}
 }
 
 func (w *Window) CreateTrackbar(name string, min, max, pos int) func() int {
@@ -46,6 +54,6 @@ func (w *Window) WaitKey(d ...int) int {
 func (w *Window) AddImage(img gocv.Mat) {
 	w.grid.AddImage(img)
 
-	w.w.IMShow(w.grid.GenerateGrid())
+	w.w.IMShow(w.grid.GenerateGridWithCellSize(image.Point{X: w.width, Y: w.height}))
 	w.w.WaitKey(1)
 }

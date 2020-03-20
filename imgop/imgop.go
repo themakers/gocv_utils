@@ -1,28 +1,31 @@
 package imgop
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"github.com/themakers/gocv_utils/calc"
 	"gocv.io/x/gocv"
 	"image"
 	"image/color"
+	_ "image/jpeg"
+	_ "image/png"
+	"io"
 )
 
 const MatType = gocv.MatTypeCV8UC4
 
 func NewMat(size image.Point) gocv.Mat {
-	//return gocv.NewMatWithSize(size.Y, size.X, MatType)
+	return gocv.NewMatWithSize(size.Y, size.X, MatType)
 
-	mat, err := gocv.NewMatFromBytes(
-		size.Y, size.X, MatType,
-		bytes.Repeat([]byte{0, 0, 0, 128}, size.Y*size.X*4),
-	)
-	if err != nil {
-		panic(err)
-	}
-	return mat
+	// FIXME ???
+	//mat, err := gocv.NewMatFromBytes(
+	//	size.Y, size.X, MatType,
+	//	bytes.Repeat([]byte{0, 0, 0, 128}, size.Y*size.X*4),
+	//)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//return mat
 }
 
 func MatSize(mat gocv.Mat) image.Point {
@@ -45,12 +48,29 @@ func Fill(mat gocv.Mat, c color.RGBA) {
 		{X: size.X, Y: 0},
 		{X: size.X, Y: size.Y},
 		{X: 0, Y: size.Y},
+		{X: 0, Y: 0},
 	}}, c)
+}
+
+func LoadFile(name string) gocv.Mat {
+	return gocv.IMRead(name, gocv.IMReadUnchanged)
+}
+
+func LoadBytes(r io.Reader) gocv.Mat {
+	img, _, err := image.Decode(r)
+	if err != nil {
+		panic(err)
+	}
+	mat, err := gocv.ImageToMatRGBA(img)
+	if err != nil {
+		panic(err)
+	}
+	return mat
 }
 
 //func Resize(mat gocv.Mat, size image.Point) gocv.Mat {
 //	dst := gocv.NewMatWithSize(size.X, size.Y, matType)
-//	gocv.Resize(mat, &dst, size, 0, 0, gocv.InterpolationLanczos4)
+//	gocv.Resize(mat, &dst, size, 0, 0, gocv.InterpolationLinear)
 //	return dst
 //}
 
@@ -74,7 +94,7 @@ func BlitFit(dst gocv.Mat, rect image.Rectangle, src gocv.Mat) {
 
 	region := dst.Region(rect)
 
-	gocv.Resize(src, &region, rect.Size(), 0, 0, gocv.InterpolationLanczos4)
+	gocv.Resize(src, &region, rect.Size(), 0, 0, gocv.InterpolationLinear)
 }
 
 // Reference:

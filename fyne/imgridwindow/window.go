@@ -21,7 +21,7 @@ type ImGridWindow struct {
 func New(app fyne.App, title string) *ImGridWindow {
 	igw := &ImGridWindow{
 		Window: app.NewWindow(title),
-		grid:   imgrid.New(400, 400),
+		grid:   imgrid.New(),
 	}
 
 	var (
@@ -46,10 +46,10 @@ func (igw *ImGridWindow) raster(w, h int) image.Image {
 	}()
 	dst := imgop.NewMat(image.Point{X: w, Y: h})
 
-	grid := igw.grid.GenerateGrid()
+	//grid := igw.grid.GenerateGridWithCellSize(image.Point{X: w, Y: h})
+	grid := igw.grid.GenerateGridWithCellSize(image.Point{X: 400, Y: 300})
 
 	imgop.BlitFit(dst, imgop.MatRect(dst), grid)
-	log.Println("raster calculation time1:", time.Now().Sub(t0))
 
 	img, err := dst.ToImage()
 	if err != nil {
@@ -60,4 +60,9 @@ func (igw *ImGridWindow) raster(w, h int) image.Image {
 
 func (igw *ImGridWindow) AddImage(mat gocv.Mat) {
 	igw.grid.AddImage(mat)
+}
+
+
+func (igw *ImGridWindow) SetImage(i int, mat gocv.Mat) {
+	igw.grid.SetImage(i, mat)
 }
