@@ -37,15 +37,16 @@ func main() {
 
 	tt := wWeight.Trackbar().
 		Name("TrackBar").
-		Default(3).ValueType(imgridwindow.IntegerRange(10, 20)).
+		Default(3).
+		ValueType(imgridwindow.IntegerRange(10, 20)).
 		Position(imgridwindow.PositionTop)
 
 
 	chTrack := tt.Build()
 
-	tt.Name("2").Build()
+	tt.ValueType(imgridwindow.IntegerRange(1000, 3000)).Name("2").Build()
 	tt.Default(11).Name("3").Build()
-	tt.Default(12).Name("4").Build()
+	tt.Default(12).Name("4").Position(imgridwindow.PositionBottom).Build()
 
 	wAbout := a.NewWindow("About")
 	wAbout.Show()
